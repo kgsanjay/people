@@ -5,8 +5,7 @@ class AnnouncementController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $this->announcementModel = new Announcement();
         $this->employeeModel = new Employee();
         $this->notificationModel = new Notification();

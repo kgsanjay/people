@@ -6,7 +6,6 @@ class HelpDeskController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->ticketModel = new Ticket();
         $this->departmentModel = new Department();
         $this->employeeModel = new Employee();
@@ -15,9 +14,7 @@ class HelpDeskController extends BaseController {
 
     // Admin/Manager view to manage all tickets
     public function index() {
-        if ($_SESSION['user_role'] === 'employee') {
-            $this->redirect('/helpdesk/myTickets');
-        }
+        $this->authorize(['admin', 'manager']);
         $tickets = $this->ticketModel->getAll();
         $admins = $this->employeeModel->getAdminsAndManagers(); // Simplified: any admin/manager can be assigned
         $this->view('helpdesk/index', ['tickets' => $tickets, 'admins' => $admins]);
@@ -25,16 +22,19 @@ class HelpDeskController extends BaseController {
 
     // Employee view to see their own tickets
     public function myTickets() {
+        $this->authorize();
         $tickets = $this->ticketModel->getForEmployee($_SESSION['user_id']);
         $this->view('helpdesk/my_tickets', ['tickets' => $tickets]);
     }
 
     public function create() {
+        $this->authorize();
         $departments = $this->departmentModel->getAll();
         $this->view('helpdesk/create', ['departments' => $departments]);
     }
 
     public function store() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
             $data['employee_id'] = $_SESSION['user_id'];
@@ -52,7 +52,7 @@ class HelpDeskController extends BaseController {
     }
 
     public function update() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ticket_id = $_POST['ticket_id'];
             $status = $_POST['status'];

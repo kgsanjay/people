@@ -2,11 +2,7 @@
 class ReportController extends BaseController {
 
     public function __construct() {
-        $this->checkAuth();
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
     }
 
     public function index() {

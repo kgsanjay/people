@@ -8,7 +8,6 @@ class ExpenseController extends BaseController {
     private $uploadDir = __DIR__ . '/../../public/uploads/';
 
     public function __construct() {
-        $this->checkAuth();
         $this->expenseModel = new Expense();
         $this->workflowModel = new Workflow();
         $this->approvalModel = new ApprovalRequest();
@@ -17,21 +16,24 @@ class ExpenseController extends BaseController {
     }
 
     public function index() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         $expenses = $this->expenseModel->getAll();
         $this->view('expenses/index', ['expenses' => $expenses]);
     }
 
     public function myExpenses() {
+        $this->authorize();
         $expenses = $this->expenseModel->getForEmployee($_SESSION['user_id']);
         $this->view('expenses/my_expenses', ['expenses' => $expenses]);
     }
 
     public function create() {
+        $this->authorize();
         $this->view('expenses/create');
     }
 
     public function store() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
             $data['employee_id'] = $_SESSION['user_id'];
@@ -76,7 +78,7 @@ class ExpenseController extends BaseController {
     }
 
     public function processApproval($approval_id, $decision) {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
 
         $this->approvalModel->updateStatus($approval_id, $decision, $_SESSION['user_id']);
         $approval_request = $this->approvalModel->findById($approval_id);

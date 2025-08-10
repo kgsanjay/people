@@ -6,7 +6,6 @@ class AssetController extends BaseController {
     private $auditLogModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->assetModel = new Asset();
         $this->employeeModel = new Employee();
         $this->notificationModel = new Notification();
@@ -15,34 +14,26 @@ class AssetController extends BaseController {
 
     // Admin view to see all assets
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         $assets = $this->assetModel->getAll();
         $this->view('assets/index', ['assets' => $assets]);
     }
 
     // Employee view to see their own assets
     public function myAssets() {
+        $this->authorize();
         $assets = $this->assetModel->getForEmployee($_SESSION['user_id']);
         $this->view('assets/my_assets', ['assets' => $assets]);
     }
 
     public function create() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         $employees = $this->employeeModel->getAll();
         $this->view('assets/form', ['action' => 'create', 'employees' => $employees]);
     }
 
     public function store() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->assetModel->create($_POST)) {
                  if (!empty($_POST['assigned_to_id'])) {
@@ -57,20 +48,14 @@ class AssetController extends BaseController {
     }
 
     public function edit($id) {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         $asset = $this->assetModel->findById($id);
         $employees = $this->employeeModel->getAll();
         $this->view('assets/form', ['action' => 'edit', 'asset' => $asset, 'employees' => $employees]);
     }
 
     public function update($id) {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $old_asset = $this->assetModel->findById($id);
             if ($this->assetModel->update($id, $_POST)) {
@@ -87,10 +72,7 @@ class AssetController extends BaseController {
     }
 
     public function delete($id) {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         $asset = $this->assetModel->findById($id);
         if ($this->assetModel->delete($id)) {
             $this->auditLogModel->logAction($_SESSION['user_id'], 'DELETE_ASSET', "Deleted asset: " . $asset['name'] . " (ID: " . $id . ")");

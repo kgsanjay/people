@@ -5,10 +5,7 @@ class SettingsController extends BaseController {
     private $awardModel;
 
     public function __construct() {
-        $this->checkAuth();
-        if ($_SESSION['user_role'] !== 'admin') {
-            exit('Access Denied');
-        }
+        $this->authorize(['admin']);
         $this->departmentModel = new Department();
         $this->leaveTypeModel = new LeaveType();
         $this->awardModel = new Award();

@@ -5,13 +5,13 @@ class FeedbackController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->feedbackModel = new Feedback();
         $this->employeeModel = new Employee();
         $this->notificationModel = new Notification();
     }
 
     public function index() {
+        $this->authorize();
         $received = $this->feedbackModel->getReceived($_SESSION['user_id']);
         $given = $this->feedbackModel->getGiven($_SESSION['user_id']);
         $requests = $this->feedbackModel->getRequestsForUser($_SESSION['user_id']);
@@ -19,17 +19,19 @@ class FeedbackController extends BaseController {
     }
 
     public function team() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         $team_feedback = $this->feedbackModel->getForTeam($_SESSION['user_id']);
         $this->view('feedback/team_feedback', ['feedback' => $team_feedback]);
     }
 
     public function request() {
+        $this->authorize();
         $employees = $this->employeeModel->getAll();
         $this->view('feedback/request', ['employees' => $employees]);
     }
 
     public function storeRequest() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->feedbackModel->request($_SESSION['user_id'], $_POST['provider_id'], $_POST['context'])) {
                 $message = $_SESSION['user_name'] . " has requested feedback from you.";
@@ -40,11 +42,13 @@ class FeedbackController extends BaseController {
     }
 
     public function give($receiver_id = null, $request_id = null) {
+        $this->authorize();
         $employees = $this->employeeModel->getAll();
         $this->view('feedback/give', ['employees' => $employees, 'receiver_id' => $receiver_id, 'request_id' => $request_id]);
     }
 
     public function storeFeedback() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $is_public = isset($_POST['is_public']) ? 1 : 0;
             $request_id = empty($_POST['request_id']) ? null : $_POST['request_id'];

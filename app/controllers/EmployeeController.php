@@ -7,7 +7,6 @@ class EmployeeController extends BaseController {
     private $uploadDir = __DIR__ . '/../../public/uploads/';
 
     public function __construct() {
-        $this->checkAuth();
         $this->employeeModel = new Employee();
         $this->employeeFileModel = new EmployeeFile();
         $this->awardModel = new Award();
@@ -16,14 +15,14 @@ class EmployeeController extends BaseController {
 
     // Admin view of all employees
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $employees = $this->employeeModel->getAll();
         $this->view('employees/index', ['employees' => $employees]);
     }
 
     // Admin view of a single employee's full profile
     public function profile($id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $employee = $this->employeeModel->findById($id);
         $details = $this->employeeModel->getDetails($id);
         $dependents = $this->employeeModel->getDependents($id);
@@ -42,6 +41,7 @@ class EmployeeController extends BaseController {
 
     // Employee self-service profile view
     public function myProfile() {
+        $this->authorize();
         $id = $_SESSION['user_id'];
         $employee = $this->employeeModel->findById($id);
         $details = $this->employeeModel->getDetails($id);
@@ -58,13 +58,13 @@ class EmployeeController extends BaseController {
     }
 
     public function create() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $employees = $this->employeeModel->getAll();
         $this->view('employees/form', ['action' => 'create', 'employees' => $employees]);
     }
 
     public function store() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->employeeModel->create($_POST)) {
                 $details = "Created new employee: " . $_POST['first_name'] . " " . $_POST['last_name'] . " (" . $_POST['email'] . ").";
@@ -75,14 +75,14 @@ class EmployeeController extends BaseController {
     }
 
     public function edit($id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $employee = $this->employeeModel->findById($id);
         $employees = $this->employeeModel->getAll();
         $this->view('employees/form', ['action' => 'edit', 'employee' => $employee, 'employees' => $employees]);
     }
 
     public function update($id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->employeeModel->update($id, $_POST)) {
                 $details = "Updated employee details for ID: " . $id . ".";
@@ -93,7 +93,7 @@ class EmployeeController extends BaseController {
     }
 
     public function delete($id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $employee = $this->employeeModel->findById($id);
         if ($this->employeeModel->delete($id)) {
             $details = "Deleted employee: " . $employee['first_name'] . " " . $employee['last_name'] . " (ID: " . $id . ").";
@@ -103,7 +103,7 @@ class EmployeeController extends BaseController {
     }
 
     public function updateDetails() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->employeeModel->createOrUpdateDetails($_POST);
             $this->auditLogModel->logAction($_SESSION['user_id'], 'UPDATE_PROFILE', 'Updated personal details for employee ID: ' . $_POST['employee_id']);
@@ -112,7 +112,7 @@ class EmployeeController extends BaseController {
     }
 
     public function addDependent() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->employeeModel->addDependent($_POST);
             $this->auditLogModel->logAction($_SESSION['user_id'], 'ADD_DEPENDENT', 'Added dependent for employee ID: ' . $_POST['employee_id']);
@@ -121,14 +121,14 @@ class EmployeeController extends BaseController {
     }
 
     public function deleteDependent($employee_id, $dependent_id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $this->employeeModel->deleteDependent($dependent_id);
         $this->auditLogModel->logAction($_SESSION['user_id'], 'DELETE_DEPENDENT', 'Deleted dependent ID: ' . $dependent_id . ' for employee ID: ' . $employee_id);
         $this->redirect('/employees/profile/' . $employee_id);
     }
 
     public function uploadFile() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['employee_file'])) {
             $employee_id = $_POST['employee_id'];
             $title = $_POST['title'];
@@ -148,7 +148,7 @@ class EmployeeController extends BaseController {
     }
 
     public function deleteFile($employee_id, $file_id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         
         $file = $this->employeeFileModel->findById($file_id);
         if ($file) {

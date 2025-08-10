@@ -3,11 +3,7 @@ class AuditController extends BaseController {
     private $auditLogModel;
 
     public function __construct() {
-        $this->checkAuth();
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         $this->auditLogModel = new AuditLog();
     }
 

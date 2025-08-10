@@ -8,7 +8,6 @@ class PayrollController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->salaryModel = new Salary();
         $this->employeeModel = new Employee();
         $this->auditLogModel = new AuditLog();
@@ -19,14 +18,14 @@ class PayrollController extends BaseController {
 
     // Admin view for salary structures
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $salaries = $this->salaryModel->getAllSalariesWithEmployee();
         $this->view('payroll/index', ['salaries' => $salaries]);
     }
 
     // Admin view to manage a single employee's salary
     public function manage($employee_id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $employee = $this->employeeModel->findById($employee_id);
         $salary = $this->salaryModel->findByEmployeeId($employee_id);
         $this->view('payroll/manage', ['employee' => $employee, 'salary' => $salary]);
@@ -34,7 +33,7 @@ class PayrollController extends BaseController {
 
     // Update salary structure
     public function update() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->salaryModel->createOrUpdate($_POST)) {
                 $employee = $this->employeeModel->findById($_POST['employee_id']);
@@ -47,20 +46,20 @@ class PayrollController extends BaseController {
 
     // NEW: List all payroll runs
     public function runs() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $runs = $this->payrollRunModel->getAll();
         $this->view('payroll/runs', ['runs' => $runs]);
     }
 
     // NEW: Show form to create a new run
     public function createRun() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $this->view('payroll/create_run');
     }
 
     // NEW: Process and store a payroll run
     public function storeRun() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $month = $_POST['month'];
             $year = $_POST['year'];
@@ -105,12 +104,14 @@ class PayrollController extends BaseController {
 
     // UPDATED: Employee view for their payslips
     public function myPayslip() {
+        $this->authorize();
         $payslips = $this->payslipModel->getForEmployee($_SESSION['user_id']);
         $this->view('payroll/my_payslip', ['payslips' => $payslips]);
     }
     
     // NEW: Employee view for a single, historical payslip
     public function viewPayslip($payslip_id) {
+        $this->authorize();
         $payslip = $this->payslipModel->findById($payslip_id);
         // Security check: ensure the user can only view their own payslip
         if ($payslip['employee_id'] != $_SESSION['user_id']) {

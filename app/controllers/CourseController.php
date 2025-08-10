@@ -8,7 +8,6 @@ class CourseController extends BaseController {
     private $employeeModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->courseModel = new Course();
         $this->enrollmentModel = new CourseEnrollment();
         $this->lessonModel = new Lesson();
@@ -19,7 +18,7 @@ class CourseController extends BaseController {
 
     // Admin: Manage courses and lessons
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $courses = $this->courseModel->getAll();
         foreach ($courses as &$course) {
             $course['lessons'] = $this->lessonModel->getForCourse($course['id']);
@@ -28,12 +27,12 @@ class CourseController extends BaseController {
     }
 
     public function create() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $this->view('courses/form', ['action' => 'create']);
     }
 
     public function store() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->courseModel->create($_POST);
         }
@@ -41,7 +40,7 @@ class CourseController extends BaseController {
     }
     
     public function storeLesson() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->lessonModel->create($_POST['course_id'], $_POST['title'], $_POST['content']);
         }
@@ -49,19 +48,21 @@ class CourseController extends BaseController {
     }
     
     public function deleteLesson($lesson_id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $this->lessonModel->delete($lesson_id);
         $this->redirect('/course');
     }
 
     // Employee: View course catalog
     public function catalog() {
+        $this->authorize();
         $courses = $this->courseModel->getAll();
         $this->view('courses/catalog', ['courses' => $courses]);
     }
 
     // Employee: View a single course
     public function view($course_id) {
+        $this->authorize();
         $this->enrollmentModel->enroll($_SESSION['user_id'], $course_id); // Auto-enroll on view
         $course = $this->courseModel->findById($course_id);
         $lessons = $this->lessonModel->getForCourse($course_id);
@@ -76,6 +77,7 @@ class CourseController extends BaseController {
     
     // Employee: Mark a lesson as complete
     public function completeLesson($course_id, $lesson_id) {
+        $this->authorize();
         $this->progressModel->markComplete($_SESSION['user_id'], $lesson_id);
         $this->redirect('/course/view/' . $course_id);
     }
