@@ -6,7 +6,6 @@ class GoalController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->goalModel = new Goal();
         $this->keyResultModel = new KeyResult();
         $this->employeeModel = new Employee();
@@ -15,6 +14,7 @@ class GoalController extends BaseController {
 
     // Employee view of their own goals
     public function index() {
+        $this->authorize();
         $goals = $this->goalModel->getForEmployee($_SESSION['user_id']);
         foreach ($goals as &$goal) {
             $goal['key_results'] = $this->keyResultModel->getForGoal($goal['id']);
@@ -24,7 +24,7 @@ class GoalController extends BaseController {
 
     // Manager view of their team's goals
     public function team() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         $team_members = $this->employeeModel->getDirectReports($_SESSION['user_id']);
         $goals = $this->goalModel->getForTeam($_SESSION['user_id']);
         foreach ($goals as &$goal) {
@@ -34,7 +34,7 @@ class GoalController extends BaseController {
     }
 
     public function store() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $goal_id = $this->goalModel->create($_POST);
             if ($goal_id && isset($_POST['key_results'])) {
@@ -52,6 +52,7 @@ class GoalController extends BaseController {
     }
 
     public function updateProgress() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $kr_id = $_POST['kr_id'];
             $progress = $_POST['progress'];

@@ -4,8 +4,7 @@ class WorkflowController extends BaseController {
     private $auditLogModel;
 
     public function __construct() {
-        $this->checkAuth();
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $this->workflowModel = new Workflow();
         $this->auditLogModel = new AuditLog();
     }

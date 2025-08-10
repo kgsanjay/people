@@ -8,7 +8,6 @@ class LeaveController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->leaveModel = new LeaveRequest();
         $this->leaveTypeModel = new LeaveType();
         $this->workflowModel = new Workflow();
@@ -18,16 +17,19 @@ class LeaveController extends BaseController {
     }
 
     public function index() {
+        $this->authorize();
         $leaves = $this->leaveModel->getForEmployee($_SESSION['user_id']);
         $this->view('leaves/index', ['leaves' => $leaves]);
     }
 
     public function create() {
+        $this->authorize();
         $leave_types = $this->leaveTypeModel->getAll();
         $this->view('leaves/create', ['leave_types' => $leave_types]);
     }
 
     public function store() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
             $data['employee_id'] = $_SESSION['user_id'];
@@ -69,7 +71,7 @@ class LeaveController extends BaseController {
     }
 
     public function processApproval($approval_id, $decision) {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
 
         // 1. Update the current approval request status
         $this->approvalModel->updateStatus($approval_id, $decision, $_SESSION['user_id']);

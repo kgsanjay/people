@@ -4,12 +4,7 @@ class ProjectController extends BaseController {
     private $auditLogModel;
 
     public function __construct() {
-        $this->checkAuth();
-        // Only admins can manage projects
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied";
-            exit();
-        }
+        $this->authorize(['admin']);
         $this->projectModel = new Project();
         $this->auditLogModel = new AuditLog();
     }

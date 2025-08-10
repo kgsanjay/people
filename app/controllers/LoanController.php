@@ -5,7 +5,6 @@ class LoanController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->loanModel = new Loan();
         $this->employeeModel = new Employee();
         $this->notificationModel = new Notification();
@@ -13,24 +12,25 @@ class LoanController extends BaseController {
 
     // Admin view to manage all loans
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            $this->redirect('/loan/myLoans');
-        }
+        $this->authorize(['admin']);
         $loans = $this->loanModel->getAll();
         $this->view('loans/index', ['loans' => $loans]);
     }
 
     // Employee view to see their own loans
     public function myLoans() {
+        $this->authorize();
         $loans = $this->loanModel->getForEmployee($_SESSION['user_id']);
         $this->view('loans/my_loans', ['loans' => $loans]);
     }
 
     public function create() {
+        $this->authorize();
         $this->view('loans/create');
     }
 
     public function store() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
             $data['employee_id'] = $_SESSION['user_id'];
@@ -48,7 +48,7 @@ class LoanController extends BaseController {
     }
 
     public function updateStatus($loan_id, $status) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         
         if ($this->loanModel->updateStatus($loan_id, $status)) {
             $loan = $this->loanModel->findById($loan_id);

@@ -5,8 +5,7 @@ class RecruitmentController extends BaseController {
     private $auditLogModel;
 
     public function __construct() {
-        $this->checkAuth();
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $this->jobOpeningModel = new JobOpening();
         $this->jobApplicationModel = new JobApplication();
         $this->auditLogModel = new AuditLog();

@@ -10,7 +10,6 @@ class TimesheetController extends BaseController {
     private $auditLogModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->timesheetModel = new Timesheet();
         $this->projectModel = new Project();
         $this->submissionModel = new TimesheetSubmission();
@@ -22,17 +21,20 @@ class TimesheetController extends BaseController {
     }
 
     public function index() {
+        $this->authorize();
         $timesheets = $this->timesheetModel->getForEmployee($_SESSION['user_id']);
         $unsubmitted = $this->timesheetModel->getUnsubmittedForEmployee($_SESSION['user_id']);
         $this->view('timesheets/index', ['timesheets' => $timesheets, 'unsubmitted' => $unsubmitted]);
     }
 
     public function create() {
+        $this->authorize();
         $projects = $this->projectModel->getAll();
         $this->view('timesheets/form', ['projects' => $projects]);
     }
 
     public function store() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
             $data['employee_id'] = $_SESSION['user_id'];
@@ -44,6 +46,7 @@ class TimesheetController extends BaseController {
     }
 
     public function submit() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $unsubmitted = $this->timesheetModel->getUnsubmittedForEmployee($_SESSION['user_id']);
             if (!empty($unsubmitted)) {
@@ -85,7 +88,7 @@ class TimesheetController extends BaseController {
     }
 
     public function processApproval($approval_id, $decision) {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
 
         $this->approvalModel->updateStatus($approval_id, $decision, $_SESSION['user_id']);
         $approval_request = $this->approvalModel->findById($approval_id);

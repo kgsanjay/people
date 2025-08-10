@@ -5,7 +5,6 @@ class CasesController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->caseModel = new CaseModel();
         $this->employeeModel = new Employee();
         $this->notificationModel = new Notification();
@@ -13,9 +12,7 @@ class CasesController extends BaseController {
 
     // Admin view to manage all cases
     public function index() {
-        if ($_SESSION['user_role'] === 'employee') {
-            $this->redirect('/cases/myCases');
-        }
+        $this->authorize(['admin', 'manager']);
         $cases = $this->caseModel->getAll();
         $admins = $this->employeeModel->getAdminsAndManagers();
         $this->view('cases/index', ['cases' => $cases, 'admins' => $admins]);
@@ -23,15 +20,18 @@ class CasesController extends BaseController {
 
     // Employee view to see their own cases
     public function myCases() {
+        $this->authorize();
         $cases = $this->caseModel->getForEmployee($_SESSION['user_id']);
         $this->view('cases/my_cases', ['cases' => $cases]);
     }
 
     public function create() {
+        $this->authorize();
         $this->view('cases/create');
     }
 
     public function store() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
             $data['employee_id'] = $_SESSION['user_id'];
@@ -49,7 +49,7 @@ class CasesController extends BaseController {
     }
 
     public function update() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $case_id = $_POST['case_id'];
             $status = $_POST['status'];

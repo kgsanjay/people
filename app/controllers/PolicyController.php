@@ -7,7 +7,6 @@ class PolicyController extends BaseController {
     private $uploadDir = __DIR__ . '/../../public/uploads/';
 
     public function __construct() {
-        $this->checkAuth();
         $this->policyModel = new Policy();
         $this->acknowledgmentModel = new PolicyAcknowledgment();
         $this->employeeModel = new Employee();
@@ -16,9 +15,7 @@ class PolicyController extends BaseController {
 
     // Admin view
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            $this->redirect('/policy/myPolicies');
-        }
+        $this->authorize(['admin']);
         $policies = $this->policyModel->getAll();
         foreach ($policies as &$policy) {
             $policy['acknowledgments'] = $this->acknowledgmentModel->getAcknowledgmentsForPolicy($policy['id']);
@@ -28,13 +25,14 @@ class PolicyController extends BaseController {
 
     // Employee view
     public function myPolicies() {
+        $this->authorize();
         $policies = $this->policyModel->getAll();
         $acknowledged_ids = $this->acknowledgmentModel->getAcknowledgedPolicyIdsForUser($_SESSION['user_id']);
         $this->view('policies/my_policies', ['policies' => $policies, 'acknowledged_ids' => $acknowledged_ids]);
     }
 
     public function upload() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['policy_file'])) {
             $title = $_POST['title'];
             $file = $_FILES['policy_file'];
@@ -58,12 +56,13 @@ class PolicyController extends BaseController {
     }
 
     public function acknowledge($policy_id) {
+        $this->authorize();
         $this->acknowledgmentModel->acknowledge($policy_id, $_SESSION['user_id']);
         $this->redirect('/policy/myPolicies');
     }
 
     public function delete($id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $policy = $this->policyModel->findById($id);
         if ($policy) {
             $filePath = $this->uploadDir . $policy['filename'];

@@ -6,7 +6,6 @@ class PerformanceController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->reviewCycleModel = new ReviewCycle();
         $this->performanceReviewModel = new PerformanceReview();
         $this->employeeModel = new Employee();
@@ -15,14 +14,14 @@ class PerformanceController extends BaseController {
 
     // Admin: Manage review cycles
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $cycles = $this->reviewCycleModel->getAll();
         $employees = $this->employeeModel->getAll();
         $this->view('performance/index', ['cycles' => $cycles, 'employees' => $employees]);
     }
 
     public function createCycle() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->reviewCycleModel->create($_POST['name'], $_POST['start_date'], $_POST['end_date']);
         }
@@ -30,7 +29,7 @@ class PerformanceController extends BaseController {
     }
 
     public function initiateReviews() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $cycle_id = $_POST['cycle_id'];
             $employee_ids = $_POST['employee_ids'];
@@ -48,18 +47,20 @@ class PerformanceController extends BaseController {
 
     // Employee: View their own reviews
     public function myReviews() {
+        $this->authorize();
         $reviews = $this->performanceReviewModel->getForEmployee($_SESSION['user_id']);
         $this->view('performance/my_reviews', ['reviews' => $reviews]);
     }
 
     // Manager: View team reviews
     public function team() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         $reviews = $this->performanceReviewModel->getForManager($_SESSION['user_id']);
         $this->view('performance/team_reviews', ['reviews' => $reviews]);
     }
     
     public function view($review_id) {
+        $this->authorize();
         $review = $this->performanceReviewModel->findById($review_id);
         // Security check
         if ($review['employee_id'] != $_SESSION['user_id'] && $review['manager_id'] != $_SESSION['user_id']) {
@@ -69,6 +70,7 @@ class PerformanceController extends BaseController {
     }
 
     public function saveSelfAssessment() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $review_id = $_POST['review_id'];
             $review = $this->performanceReviewModel->findById($review_id);
@@ -82,6 +84,7 @@ class PerformanceController extends BaseController {
     }
 
     public function saveManagerReview() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $review_id = $_POST['review_id'];
             $review = $this->performanceReviewModel->findById($review_id);

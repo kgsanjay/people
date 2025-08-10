@@ -6,7 +6,6 @@ class OnboardingController extends BaseController {
     private $notificationModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->checklistModel = new Checklist();
         $this->employeeChecklistModel = new EmployeeChecklist();
         $this->employeeModel = new Employee();
@@ -15,9 +14,7 @@ class OnboardingController extends BaseController {
 
     // Admin view to manage checklist templates
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            $this->redirect('/onboarding/myTasks');
-        }
+        $this->authorize(['admin']);
         $checklists = $this->checklistModel->getAll();
         $assignments = $this->employeeChecklistModel->getAssignedChecklists();
         $this->view('onboarding/index', ['checklists' => $checklists, 'assignments' => $assignments]);
@@ -25,12 +22,13 @@ class OnboardingController extends BaseController {
 
     // Page for any user to see tasks assigned to them
     public function myTasks() {
+        $this->authorize();
         $tasks = $this->employeeChecklistModel->getTasksForUser($_SESSION['user_id']);
         $this->view('onboarding/my_tasks', ['tasks' => $tasks]);
     }
 
     public function storeTemplate() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $checklist_id = $this->checklistModel->create($_POST['name'], $_POST['type']);
             foreach ($_POST['tasks'] as $task) {
@@ -43,14 +41,14 @@ class OnboardingController extends BaseController {
     }
 
     public function assign() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $employees = $this->employeeModel->getAll();
         $checklists = $this->checklistModel->getAll();
         $this->view('onboarding/assign', ['employees' => $employees, 'checklists' => $checklists]);
     }
 
     public function storeAssignment() {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $employee_id = $_POST['employee_id'];
             $checklist_id = $_POST['checklist_id'];
@@ -84,13 +82,14 @@ class OnboardingController extends BaseController {
     }
     
     public function progress($assignment_id) {
-        if ($_SESSION['user_role'] !== 'admin') { exit('Access Denied'); }
+        $this->authorize(['admin']);
         $assignment = $this->employeeChecklistModel->getAssignmentDetails($assignment_id);
         $tasks = $this->employeeChecklistModel->getChecklistProgress($assignment_id);
         $this->view('onboarding/progress', ['assignment' => $assignment, 'tasks' => $tasks]);
     }
     
     public function updateTask() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->employeeChecklistModel->updateTaskStatus($_POST['task_id'], 'completed', $_SESSION['user_id']);
         }

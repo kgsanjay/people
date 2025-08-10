@@ -1,7 +1,7 @@
 <?php
 class DashboardController extends BaseController {
     public function index() {
-        $this->checkAuth();
+        $this->authorize();
         $employeeModel = new Employee();
         $announcementModel = new Announcement();
         $policyAckModel = new PolicyAcknowledgment();

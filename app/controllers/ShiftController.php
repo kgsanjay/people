@@ -7,7 +7,6 @@ class ShiftController extends BaseController {
     private $auditLogModel;
 
     public function __construct() {
-        $this->checkAuth();
         $this->shiftModel = new Shift();
         $this->employeeShiftModel = new EmployeeShift();
         $this->employeeModel = new Employee();
@@ -17,9 +16,7 @@ class ShiftController extends BaseController {
 
     // Admin view to manage shift types
     public function index() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            $this->redirect('/shift/mySchedule');
-        }
+        $this->authorize(['admin']);
         $shifts = $this->shiftModel->getAll();
         $assignments = $this->employeeShiftModel->getAllAssignments();
         $this->view('shifts/index', ['shifts' => $shifts, 'assignments' => $assignments]);
@@ -27,21 +24,18 @@ class ShiftController extends BaseController {
 
     // Employee view to see their schedule
     public function mySchedule() {
+        $this->authorize();
         $schedule = $this->employeeShiftModel->getForEmployee($_SESSION['user_id']);
         $this->view('shifts/my_schedule', ['schedule' => $schedule]);
     }
     
     public function create() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied"; exit();
-        }
+        $this->authorize(['admin']);
         $this->view('shifts/form', ['action' => 'create']);
     }
 
     public function store() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied"; exit();
-        }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->shiftModel->create($_POST)) {
                 $this->auditLogModel->logAction($_SESSION['user_id'], 'CREATE_SHIFT', "Created shift type: " . $_POST['name']);
@@ -51,17 +45,13 @@ class ShiftController extends BaseController {
     }
 
     public function edit($id) {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied"; exit();
-        }
+        $this->authorize(['admin']);
         $shift = $this->shiftModel->findById($id);
         $this->view('shifts/form', ['action' => 'edit', 'shift' => $shift]);
     }
 
     public function update($id) {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied"; exit();
-        }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->shiftModel->update($id, $_POST)) {
                 $this->auditLogModel->logAction($_SESSION['user_id'], 'UPDATE_SHIFT', "Updated shift type ID: " . $id);
@@ -71,9 +61,7 @@ class ShiftController extends BaseController {
     }
 
     public function delete($id) {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied"; exit();
-        }
+        $this->authorize(['admin']);
         $shift = $this->shiftModel->findById($id);
         if ($this->shiftModel->delete($id)) {
             $this->auditLogModel->logAction($_SESSION['user_id'], 'DELETE_SHIFT', "Deleted shift type: " . $shift['name']);
@@ -83,9 +71,7 @@ class ShiftController extends BaseController {
     
     // View for assigning shifts
     public function assign() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied"; exit();
-        }
+        $this->authorize(['admin']);
         $employees = $this->employeeModel->getAll();
         $shifts = $this->shiftModel->getAll();
         $this->view('shifts/assign', ['employees' => $employees, 'shifts' => $shifts]);
@@ -93,9 +79,7 @@ class ShiftController extends BaseController {
     
     // Logic to store shift assignment
     public function storeAssignment() {
-        if ($_SESSION['user_role'] !== 'admin') {
-            echo "Access Denied"; exit();
-        }
+        $this->authorize(['admin']);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($this->employeeShiftModel->assign($_POST)) {
                 // Notify employee

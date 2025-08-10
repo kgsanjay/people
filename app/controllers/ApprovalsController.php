@@ -2,8 +2,7 @@
 class ApprovalsController extends BaseController {
     private $approvalRequestModel;
     public function __construct() {
-        $this->checkAuth();
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         $this->approvalRequestModel = new ApprovalRequest();
     }
     public function index() {

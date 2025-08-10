@@ -8,7 +8,6 @@ class ClaimController extends BaseController {
     private $uploadDir = __DIR__ . '/../../public/uploads/';
 
     public function __construct() {
-        $this->checkAuth();
         $this->claimModel = new Claim();
         $this->workflowModel = new Workflow();
         $this->approvalModel = new ApprovalRequest();
@@ -17,21 +16,24 @@ class ClaimController extends BaseController {
     }
 
     public function index() {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
         $claims = $this->claimModel->getAll();
         $this->view('claims/index', ['claims' => $claims]);
     }
 
     public function myClaims() {
+        $this->authorize();
         $claims = $this->claimModel->getForEmployee($_SESSION['user_id']);
         $this->view('claims/my_claims', ['claims' => $claims]);
     }
 
     public function create() {
+        $this->authorize();
         $this->view('claims/create');
     }
 
     public function store() {
+        $this->authorize();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
             $data['employee_id'] = $_SESSION['user_id'];
@@ -76,7 +78,7 @@ class ClaimController extends BaseController {
     }
 
     public function processApproval($approval_id, $decision) {
-        if ($_SESSION['user_role'] === 'employee') { exit('Access Denied'); }
+        $this->authorize(['admin', 'manager']);
 
         $this->approvalModel->updateStatus($approval_id, $decision, $_SESSION['user_id']);
         $approval_request = $this->approvalModel->findById($approval_id);

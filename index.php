@@ -37,6 +37,16 @@ class BaseController {
             $this->redirect('/login');
         }
     }
+
+    protected function authorize($allowed_roles = []) {
+        if (!isset($_SESSION['user_id'])) {
+            $this->redirect('/login');
+            return;
+        }
+        if (!empty($allowed_roles) && !in_array($_SESSION['user_role'], $allowed_roles)) {
+            $this->redirect('/login');
+        }
+    }
     protected function loadNotifications() {
         if (isset($_SESSION['user_id'])) {
             $notificationModel = new Notification();
